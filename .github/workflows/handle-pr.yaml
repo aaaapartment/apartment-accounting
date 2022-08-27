@@ -1,0 +1,78 @@
+name: PullRequest
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - closed
+    paths:
+      - *.csv
+
+jobs:
+  validate-input:
+    if: |
+      github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Download accounter artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: accounter
+          path: .
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v29.0.1
+
+      - name: Validate changed files
+        run: |
+          chmod +x ./accounter
+          CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
+          NUM_CHANGED=$(wc -w <<< "$CHANGED")
+          if [ $NUM_CHANGED -ne 1 ]; then
+            echo "::error Too many files - only submit one file"
+            exit 1
+          fi
+          ./accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
+
+  update-database:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.ref_name == 'main' &&
+      github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v3
+
+      - name: Download accounter artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: accounter
+          path: .
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v29.0.1
+
+      - name: Update database
+        run: |
+          chmod +x ./accounter
+          CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
+          NUM_CHANGED=$(wc -w <<< "$CHANGED")
+          if [ $NUM_CHANGED -ne 1 ]; then
+            echo "::error Too many files - only submit one file"
+            exit 1
+          fi
+          ./accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --markdown ./README.md > ./balance.csv
+          git rm $CHANGED
+          git add README.md balance.csv account.sqlite
+          git commit -m "ACCOUNTANT: add transaction"
+          git push
+
