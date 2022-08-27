@@ -33,6 +33,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: accounter
-          path: target/release/accounter
+          path: ./target/release/accounter
 
 
