@@ -38,11 +38,17 @@ jobs:
           cd accounter
           cargo build -r
 
-      - name: Upload executable to artifacts
-        uses: actions/upload-artifact@v3
+      - name: Tag release
+        uses: phish108/autotag-action@1.1.51
         with:
-          name: accounter
-          path: ./accounter/target/release/accounter
+          github-token: ${{ secrets.GITHUB_TOKEN}}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./accounter/target/release/accounter
 
   validate-input:
     if: |
@@ -54,12 +60,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Download accounter artifact
-        uses: actions/download-artifact@v3
+      - name: Download accounter release
+        uses: dsaltares/fetch-gh-release-asset@master
         with:
-          name: accounter
-          workflow_conclusion: success
-          path: .
+          file: 'accounter'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
         id: changed-files
@@ -87,12 +92,11 @@ jobs:
       - name: Checkout codebase
         uses: actions/checkout@v3
 
-      - name: Download accounter artifact
-        uses: actions/download-artifact@v3
+      - name: Download accounter release
+        uses: dsaltares/fetch-gh-release-asset@master
         with:
-          name: accounter
-          workflow_conclusion: success
-          path: .
+          file: 'accounter'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
         id: changed-files
