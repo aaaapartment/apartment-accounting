@@ -39,6 +39,7 @@ jobs:
           cargo build -r
 
       - name: Tag release
+        id: release-tag
         uses: phish108/autotag-action@1.1.51
         with:
           github-token: ${{ secrets.GITHUB_TOKEN}}
@@ -46,6 +47,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.release-tag.outputs.new-tag }}
           files: |
             ./accounter/target/release/accounter
 
