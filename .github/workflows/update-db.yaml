@@ -17,6 +17,7 @@ jobs:
       - name: Checkout codebase
         uses: actions/checkout@v3
         with:
+          token: ${{ secrets.DATABASE_UPDATE }}
           fetch-depth: 2
 
       - uses: robinraju/release-downloader@v1.4
@@ -24,7 +25,7 @@ jobs:
           latest: true
           fileName: "accounter"
           out-file-path: "./accounter-exe"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DATABASE_UPDATE }}
 
       - name: Get changed files
         id: changed-files
