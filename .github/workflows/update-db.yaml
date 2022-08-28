@@ -35,7 +35,6 @@ jobs:
           chmod +x ./accounter-exe/accounter
           git config --global user.email "aorals2@illinois.edu"
           git config --global user.name "Andrew Orals"
-          git remote set-url origin https://nd-0r-test:${{ secrets.DATABASE_UPDATE }}@github.com/aaaapartment/apartment-accounting.git
           CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
           NUM_CHANGED=$(wc -w <<< "$CHANGED")
           if [ $NUM_CHANGED -ne 1 ]; then
@@ -46,5 +45,5 @@ jobs:
           git rm $CHANGED
           git add README.md balance.csv account.sqlite
           git commit -m "ACCOUNTANT: add transaction"
-          git push
+          git push https://nd-0r-test:${{ secrets.DATABASE_UPDATE }}@github.com/aaaapartment/apartment-accounting.git
 
