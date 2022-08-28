@@ -39,5 +39,5 @@ jobs:
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --verify
+          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
 
