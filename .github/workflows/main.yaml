@@ -66,7 +66,7 @@ jobs:
         with:
           latest: true
           fileName: "accounter"
-          out-file-path: "./"
+          out-file-path: "./accounter-exe"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
@@ -75,14 +75,14 @@ jobs:
 
       - name: Validate changed files
         run: |
-          chmod +x ./accounter
+          chmod +x ./accounter-exe/accounter
           CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
           NUM_CHANGED=$(wc -w <<< "$CHANGED")
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
+          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
 
   update-database:
     if: |
@@ -99,7 +99,7 @@ jobs:
         with:
           latest: true
           fileName: "accounter"
-          out-file-path: "./"
+          out-file-path: "./accounter-exe"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
@@ -108,14 +108,14 @@ jobs:
 
       - name: Update database
         run: |
-          chmod +x ./accounter
+          chmod +x ./accounter-exe/accounter
           CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
           NUM_CHANGED=$(wc -w <<< "$CHANGED")
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --markdown ./README.md > ./balance.csv
+          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --markdown ./README.md > ./balance.csv
           git rm $CHANGED
           git add README.md balance.csv account.sqlite
           git commit -m "ACCOUNTANT: add transaction"
