@@ -61,6 +61,7 @@ fn load_csv(filename: &std::path::PathBuf) -> Vec<Item>
         // Notice that we need to provide a type hint for automatic
         // deserialization.
         let item: Item = result.unwrap();
+        price_to_fixed_point(&item.price);
         if !price_re.is_match(item.price.as_str())
         {
             panic!("Invalid price for item {}. Must be in form `\\d+.\\d{{2}}`", item.name);
