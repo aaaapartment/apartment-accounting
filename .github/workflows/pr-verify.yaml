@@ -1,15 +1,17 @@
 name: Verify PR
 on:
-  pull_request:
-    branches:
-      - main
+  pull_request_target:
     types:
-      - opened
+      - labeled
     paths:
       - "requests/*.csv"
 
+permissions:
+  contents: write
+    pull-requests: write
+
 jobs:
-  verify:
+  update-db:
     if: |
       github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -17,6 +19,8 @@ jobs:
       - name: Checkout codebase
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 2
 
       - uses: robinraju/release-downloader@v1.4
@@ -30,14 +34,29 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v29.0.1
 
-      - name: Verify file
+      - name: Update database
         run: |
           chmod +x ./accounter-exe/accounter
+          git config --global user.email "aorals2@illinois.edu"
+          git config --global user.name "Andrew Orals"
           CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
           NUM_CHANGED=$(wc -w <<< "$CHANGED")
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
+          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --markdown ./README.md > ./balance.csv
+          git rm $CHANGED
+          git add README.md balance.csv account.sqlite
+          git commit -m "ACCOUNTANT: add transaction"
+          git push
+
+          # chmod +x ./accounter-exe/accounter
+          # CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
+          # NUM_CHANGED=$(wc -w <<< "$CHANGED")
+          # if [ $NUM_CHANGED -ne 1 ]; then
+          #   echo "::error Too many files - only submit one file"
+          #   exit 1
+          # fi
+          # ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
 
