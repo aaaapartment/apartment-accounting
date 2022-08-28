@@ -46,8 +46,7 @@ jobs:
 
   validate-input:
     if: |
-      github.event_name == 'pull_request' &&
-      github.ref_name == 'main'
+      github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
@@ -59,6 +58,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: accounter
+          workflow_conclusion: success
           path: .
 
       - name: Get changed files
@@ -91,6 +91,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: accounter
+          workflow_conclusion: success
           path: .
 
       - name: Get changed files
