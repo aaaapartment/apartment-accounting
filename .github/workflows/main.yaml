@@ -42,7 +42,7 @@ jobs:
         id: release-tag
         uses: phish108/autotag-action@1.1.51
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -61,11 +61,10 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Download accounter release
-        uses: dsaltares/fetch-gh-release-asset@master
+      - uses: robinraju/release-downloader@v1.4
         with:
-          file: 'accounter'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          latest: true
+          fileName: "accounter"
 
       - name: Get changed files
         id: changed-files
@@ -93,11 +92,10 @@ jobs:
       - name: Checkout codebase
         uses: actions/checkout@v3
 
-      - name: Download accounter release
-        uses: dsaltares/fetch-gh-release-asset@master
+      - uses: robinraju/release-downloader@v1.4
         with:
-          file: 'accounter'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          latest: true
+          fileName: "accounter"
 
       - name: Get changed files
         id: changed-files
