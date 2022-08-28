@@ -3,8 +3,8 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "*.csv"
+    paths:
+      - "requests/*.csv"
 
 jobs:
   update-database:
