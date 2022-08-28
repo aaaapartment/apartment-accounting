@@ -41,7 +41,7 @@ jobs:
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user $(git --no-pager log --pretty=format:"%an" --diff-filter=A -- $CHANGED) --markdown ./README.md > ./balance.csv
+          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user "$(git --no-pager log --pretty=format:'%an' --diff-filter=A -- ./LICENSE)" --markdown ./README.md > ./balance.csv
           git rm $CHANGED
           git add README.md balance.csv account.sqlite
           git commit -m "ACCOUNTANT: add transaction"
