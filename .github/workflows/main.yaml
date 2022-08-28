@@ -66,6 +66,7 @@ jobs:
         with:
           latest: true
           fileName: "accounter"
+          out-file-path: "./accounter"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
@@ -98,6 +99,7 @@ jobs:
         with:
           latest: true
           fileName: "accounter"
+          out-file-path: "./accounter"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
