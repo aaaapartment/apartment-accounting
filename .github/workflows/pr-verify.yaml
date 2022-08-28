@@ -6,7 +6,7 @@ on:
     types:
       - opened
     paths:
-      - "*.csv"
+      - "requests/*.csv"
 
 jobs:
   verify:
