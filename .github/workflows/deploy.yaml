@@ -8,7 +8,7 @@ on:
       - ".actrc"
       - ".gitignore"
       - "*.md"
-      - "*.csv"
+      - "requests/*.csv"
 
 jobs:
   deploy:
