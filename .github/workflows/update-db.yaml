@@ -11,6 +11,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       github.ref_name == 'main' &&
+      github.actor != 'nd-0r-test' &&
       github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
