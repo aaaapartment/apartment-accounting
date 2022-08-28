@@ -1,5 +1,12 @@
-name: PullRequest
+name: Deploy
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - ".actrc"
+      - ".gitignore"
+      - "*.md"
   pull_request:
     branches:
       - main
@@ -10,8 +17,36 @@ on:
       - "*.csv"
 
 jobs:
+  deploy:
+    if: |
+      github.event_name == 'push' &&
+      github.ref_name == 'main' &&
+      github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install cargo
+          sudo apt-get install python3
+
+      - name: Build executable
+        run: |
+          cd accounter
+          cargo build -r
+
+      - name: Upload executable to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: accounter
+          path: ./accounter/target/release/accounter
+
   validate-input:
     if: |
+      github.event_name == 'pull_request' &&
       github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
@@ -43,6 +78,7 @@ jobs:
 
   update-database:
     if: |
+      github.event_name == 'pull_request' &&
       github.event.pull_request.merged == true &&
       github.ref_name == 'main' &&
       github.event.repository.fork == false
