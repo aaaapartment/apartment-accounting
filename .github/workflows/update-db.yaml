@@ -24,7 +24,7 @@ jobs:
           latest: true
           fileName: "accounter"
           out-file-path: "./accounter-exe"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DATABASE_UPDATE }}
 
       - name: Get changed files
         id: changed-files
