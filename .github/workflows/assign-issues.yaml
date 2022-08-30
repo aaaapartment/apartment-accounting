@@ -13,4 +13,4 @@ jobs:
       - uses: actions/add-to-project@RELEASE_VERSION
         with:
           project-url: 'https://github.com/orgs/aaaapartment/projects/1'
-          github-token: ${{ secrets.DATABASE_ACCESS }}
+          github-token: ${{ secrets.DATABASE_UPDATE }}
