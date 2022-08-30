@@ -1,20 +1,16 @@
-name: Auto Assign to Project(s)
+name: Auto-add issues to project
 
 on:
   issues:
-    types: [opened]
-
-env:
-  MY_GITHUB_TOKEN: ${{ secrets.DATABASE_UPDATE }}
-  GITHUB_TOKEN: ${{ secrets.DATABASE_UPDATE }}
+    types:
+      - opened
 
 jobs:
-  assign_one_project:
+  add-to-project:
+    name: Add issue to project
     runs-on: ubuntu-latest
-    name: Assign to project
     steps:
-    - name: Assign NEW issues to project 1
-      uses: srggrs/assign-one-project-github-action@1.2.1
-      if: github.event.action == 'opened'
-      with:
-        project: 'https://github.com/orgs/aaaapartment/projects/1'
+      - uses: actions/add-to-project@RELEASE_VERSION
+        with:
+          project-url: 'https://github.com/orgs/aaaapartment/projects/1'
+          github-token: ${{ secrets.DATABASE_ACCESS }}
