@@ -3,7 +3,7 @@ use std::string::String;
 use std::fs::File;
 use std::io::LineWriter;
 use clap::{Parser, ArgAction};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use rusqlite::{Connection};
 use regex::Regex;
 
@@ -40,12 +40,12 @@ struct Item
     price: String,
 }
 
-#[derive(Serialize, Debug)]
 struct UserData
 {
     user: String,
     total: u32,
-    balance: i32,
+    avg_contribution: u32,
+    balances: Vec<i32>,
 }
 
 fn load_csv(filename: &std::path::PathBuf) -> Vec<Item>
@@ -154,12 +154,22 @@ fn print_csv(user_datas: &Vec<UserData>)
 {
     let mut writer = std::io::stdout();
 
+    writer.write(format!("User, Total Contribution, {}\n", user_datas.iter()
+            .map(|user_data| user_data.user.clone())
+            .collect::<Vec<String>>()
+            .join(", ")
+        ).as_bytes()
+    ).unwrap();
+
     for user_data in user_datas.iter()
     {
         writer.write(format!("{},{},{}\n",
                              user_data.user,
                              fixed_point_to_price(user_data.total as i32),
-                             fixed_point_to_price(user_data.balance))
+                             user_data.balances.iter()
+                                .map(|&balance| fixed_point_to_price(balance))
+                                .collect::<Vec<String>>()
+                                .join(","))
                      .as_bytes())
             .unwrap();
 
@@ -169,33 +179,64 @@ fn print_csv(user_datas: &Vec<UserData>)
 fn compute_balances(db: &mut Connection) -> Vec<UserData>
 {
     // user, total, balance
-    let mut user_data: Vec<UserData> = std::vec![];
-    let mut sum: u32 = 0;
+    let mut stmt = db.prepare("SELECT COUNT(DISTINCT user) FROM account")
+        .unwrap();
+    let mut rows = stmt.query([]).unwrap();
+
+    let mut num_users: u32 = 0;
+    while let Some(row) = rows.next().unwrap()
+    {
+        num_users = row.get::<_, i64>(0).unwrap() as u32;
+    }
+
+    if num_users == 0
+    {
+        return vec![];
+    }
 
     let mut stmt = db.prepare("SELECT user, SUM(cost) FROM account GROUP BY user")
         .unwrap();
     let mut rows = stmt.query([]).unwrap();
 
+    let mut user_datas: Vec<UserData> = std::vec![];
+    let mut total_contributions = 0;
     while let Some(row) = rows.next().unwrap()
     {
         let user_total = row.get::<_, i64>(1).unwrap() as u32;
-        user_data.push(UserData
+        user_datas.push(UserData
             {
                 user: row.get::<_, String>(0).unwrap(),
                 total: user_total,
-                balance: 0,
+                avg_contribution: user_total / num_users,
+                balances: vec![],
             }
         );
-        sum += user_total;
+        total_contributions += user_total as i32;
     }
 
-    let avg = sum / user_data.len() as u32;
-    for ud in user_data.iter_mut()
+    let mut new_total_contributions = 0;
+    for user_idx in 0..num_users as usize
     {
-        ud.balance = ud.total as i32 - avg as i32;
+        let user_total = user_datas[user_idx].total;
+        let user_avg_contribution = user_datas[user_idx].avg_contribution;
+        user_datas[user_idx].balances = user_datas.iter()
+            .map(|debtor| {
+                let user_contribution = debtor.avg_contribution as i32 - user_avg_contribution as i32;
+                new_total_contributions += user_contribution;
+                user_contribution
+            })
+            .collect::<Vec<i32>>();
+        new_total_contributions += user_total as i32;
     }
 
-    user_data
+    // correct for rounding error
+    if new_total_contributions != total_contributions
+    {
+        let diff = new_total_contributions - total_contributions;
+        user_datas[num_users as usize - 1].balances[num_users as usize - 1] += diff;
+    }
+
+    user_datas
 }
 
 fn main()
