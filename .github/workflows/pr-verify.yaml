@@ -37,5 +37,5 @@ jobs:
             exit 1
           fi
           CHANGED=$(printf %b '${{ steps.changed-files.outputs.all_changed_files }}' | xargs -d '\n')
-          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
+          ./accounter-exe/accounter --database ./account.sqlite --filename "$CHANGED" --user ${{ github.event.pull_request.user.login }} --validate
 
