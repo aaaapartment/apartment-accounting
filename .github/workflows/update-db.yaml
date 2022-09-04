@@ -41,7 +41,7 @@ jobs:
           git config --global user.name "Andrew Orals"
           CHANGED=$(printf %b '${{ steps.changed-files.outputs.all_changed_files }}' | xargs -d '\n')
           ./accounter-exe/accounter --database ./account.sqlite --filename "$CHANGED" --user "$(git --no-pager log --pretty=format:'%an' --diff-filter=A -- ./LICENSE)" --markdown ./README.md > ./balance.csv
-          git rm $CHANGED
+          git rm "$CHANGED"
           git add README.md balance.csv account.sqlite
           git commit -m "ACCOUNTANT: add transaction"
           git push https://nd-0r-test:${{ secrets.DATABASE_UPDATE }}@github.com/aaaapartment/apartment-accounting.git
