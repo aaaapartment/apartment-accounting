@@ -104,7 +104,7 @@ fn fixed_point_to_price(mut num: i32) -> String
 fn price_to_fixed_point(price_str: &str) -> u32
 {
     let fixed_point_str = price_str.replace(".", "");
-    match fixed_point_str.parse()
+    match fixed_point_str.trim().parse()
     {
         Ok(i) => i,
         Err(e)     => panic!("Could not parse price `{}`: {}", price_str, e)
