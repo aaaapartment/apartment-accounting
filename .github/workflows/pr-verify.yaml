@@ -31,11 +31,11 @@ jobs:
       - name: Verify
         run: |
           chmod +x ./accounter-exe/accounter
-          CHANGED=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | xargs)
-          NUM_CHANGED=$(wc -w <<< "$CHANGED")
+          NUM_CHANGED=$(wc -l <<< "${{ steps.changed-files.outputs.all_changed_files }}")
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
             exit 1
           fi
+          CHANGED=$(echo ${{ steps.changed-files.outputs.all_changed_files }} | xargs -d '\n')
           ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
 
