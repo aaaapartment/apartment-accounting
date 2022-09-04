@@ -31,7 +31,7 @@ jobs:
       - name: Verify
         run: |
           chmod +x ./accounter-exe/accounter
-          CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
+          CHANGED=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | xargs)
           NUM_CHANGED=$(wc -w <<< "$CHANGED")
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
