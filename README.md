@@ -8,3 +8,5 @@
 |40|2022-09-07 03:11:56|Andrew Orals|large eggs|1.99|
 |41|2022-09-07 03:11:56|Andrew Orals|spaghetti|1.67|
 |42|2022-09-07 03:11:56|Andrew Orals|unsalted butter|3.48|
+|43|2022-09-08 18:46:43|Andrew Orals|Frozen grilled chicken|11.29|
+|44|2022-09-08 18:46:43|Andrew Orals|Paper towels|5.89|
