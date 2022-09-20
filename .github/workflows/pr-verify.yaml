@@ -9,7 +9,7 @@ on:
       - "requests/*.csv"
 
 jobs:
-  update-db:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
