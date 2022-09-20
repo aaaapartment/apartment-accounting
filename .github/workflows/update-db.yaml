@@ -11,7 +11,7 @@ jobs:
   update-database:
     if: |
       github.event_name == 'push' &&
-      github.ref_name == 'main' &&
+      (github.ref_name == 'main' || github.ref_name == 'test') &&
       github.actor != 'nd-0r-test' &&
       github.event.repository.fork == false
     runs-on: ubuntu-latest
