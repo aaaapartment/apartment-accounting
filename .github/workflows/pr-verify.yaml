@@ -9,13 +9,19 @@ on:
       - "requests/*.csv"
 
 jobs:
-  update-db:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
+
+      - name: Check request filenames
+        uses: batista/lint-filenames@v1
+        with:
+          path: './requests'
+          pattern: "^[-_.A-Za-z0-9]*$"
 
       - uses: robinraju/release-downloader@v1.4
         with:
@@ -33,6 +39,14 @@ jobs:
       - name: Verify
         run: |
           chmod +x ./accounter-exe/accounter
-          CHANGED=$(printf %b '${{ steps.changed-files.outputs.all_changed_files }}' | xargs -d '\n')
-          ./accounter-exe/accounter --database ./account.sqlite --filename "$CHANGED" --user ${{ github.event.pull_request.user.login }} --validate
+
+          CHANGED=$(printf %b '${{ steps.changed-files.outputs.all_changed_files }}')
+          NUM_CHANGED=$(echo "$CHANGED" | wc -l)
+          if [ $NUM_CHANGED -ne 1 ]; then
+            echo "::error Too many files - only submit one file"
+            exit 1
+          fi
+          CHANGED_ARGS=$(echo "$CHANGED" | xargs -d '\n')
+
+          ./accounter-exe/accounter --database ./account.sqlite --filename "$CHANGED_ARGS" --user ${{ github.event.pull_request.user.login }} --validate
 
