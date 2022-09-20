@@ -17,6 +17,12 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Check request filenames
+        uses: batista/lint-filenames@v1
+        with:
+          path: './requests'
+          pattern: "^[-_.A-Za-z0-9]*$"
+
       - uses: robinraju/release-downloader@v1.4
         with:
           latest: true
