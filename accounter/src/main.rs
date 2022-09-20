@@ -3,8 +3,8 @@ use std::string::String;
 use std::fs::File;
 use std::io::LineWriter;
 use clap::{Parser, ArgAction};
-use serde::{Deserialize, Serialize};
-use sqlite::{open, Connection};
+use serde::{Deserialize};
+use rusqlite::{Connection};
 use regex::Regex;
 
 /// Program to load data from specified file into accounting database
@@ -40,33 +40,43 @@ struct Item
     price: String,
 }
 
-#[derive(Serialize, Debug)]
 struct UserData
 {
     user: String,
     total: u32,
-    balance: i32,
+    avg_contribution: u32,
+    balances: Vec<i32>,
 }
 
 fn load_csv(filename: &std::path::PathBuf) -> Vec<Item>
 {
     let price_re = Regex::new(r"^\d+.\d{2}$").unwrap();
     let mut items: Vec<Item> = std::vec![];
-    let mut rdr = csv::ReaderBuilder::new()
+    let mut rdr = match csv::ReaderBuilder::new()
         .has_headers(false)
         .from_path(filename)
-        .unwrap();
+        {
+            Ok(r) => r,
+            Err(e) => panic!("Could not open CSV file `{:?}`: {}", filename.as_os_str(), e)
+        };
 
+    let mut row_idx = 0;
     for result in rdr.deserialize() {
         // Notice that we need to provide a type hint for automatic
         // deserialization.
-        let item: Item = result.unwrap();
-        price_to_fixed_point(&item.price);
-        if !price_re.is_match(item.price.as_str())
+        let item: Item = match result
         {
-            panic!("Invalid price for item {}. Must be in form `\\d+.\\d{{2}}`", item.name);
+            Ok(r) => r,
+            Err(e) => panic!("Could not deserialize CSV row with index {}: {}", row_idx, e)
+        };
+        let price_trimmed = item.price.trim();
+        price_to_fixed_point(price_trimmed);
+        if !price_re.is_match(price_trimmed)
+        {
+            panic!("Invalid price for item `{}`. Must be in form `\\d+.\\d{{2}}`", item.name);
         }
         items.push(item);
+        row_idx += 1;
     }
 
     items
@@ -91,10 +101,14 @@ fn fixed_point_to_price(mut num: i32) -> String
     price
 }
 
-fn price_to_fixed_point(price_str: &String) -> u32
+fn price_to_fixed_point(price_str: &str) -> u32
 {
     let fixed_point_str = price_str.replace(".", "");
-    fixed_point_str.parse().unwrap()
+    match fixed_point_str.trim().parse()
+    {
+        Ok(i) => i,
+        Err(e)     => panic!("Could not parse price `{}`: {}", price_str, e)
+    }
 }
 
 fn add_items(db: &mut Connection, items: &Vec<Item>, user: &String)
@@ -102,14 +116,10 @@ fn add_items(db: &mut Connection, items: &Vec<Item>, user: &String)
     for item in items
     {
         db.execute(
-            format!(
-                "
-                INSERT INTO account (user, item_name, cost) VALUES ('{}', '{}', {})
-                ",
-                user,
-                item.name,
-                price_to_fixed_point(&item.price)
-            )
+            "
+            INSERT INTO account (user, item_name, cost) VALUES (?1, ?2, ?3)
+            ",
+            &[user, item.name.trim(), price_to_fixed_point(&item.price).to_string().as_str()]
         ).unwrap();
     }
 }
@@ -119,20 +129,20 @@ fn print_table(db: &mut Connection, path: &std::path::PathBuf)
 {
     let file = File::create(path).unwrap();
     let mut writer = LineWriter::new(file);
-    let mut cursor = db.prepare("SELECT * FROM account")
-        .unwrap()
-        .into_cursor();
+    let mut stmt = db.prepare("SELECT * FROM account")
+        .unwrap();
     writer.write("|id|timestamp|user|item name|cost|\n".as_bytes()).unwrap();
     writer.write("|---|---|---|---|---|\n".as_bytes()).unwrap();
+    let mut rows = stmt.query([]).unwrap();
 
-    while let Some(Ok(row)) = cursor.next()
+    while let Some(row) = rows.next().unwrap()
     {
         writer.write(format!("|{}|{}|{}|{}|{}|\n",
-                             row.get::<i64, _>(0),
-                             row.get::<String, _>(1),
-                             row.get::<String, _>(2),
-                             row.get::<String, _>(3),
-                             fixed_point_to_price(row.get::<i64, _>(4) as i32))
+                             row.get::<_, i64>(0).unwrap(),
+                             row.get::<_, String>(1).unwrap(),
+                             row.get::<_, String>(2).unwrap(),
+                             row.get::<_, String>(3).unwrap(),
+                             fixed_point_to_price(row.get::<_, i64>(4).unwrap() as i32))
                      .as_bytes())
             .unwrap();
     }
@@ -144,12 +154,22 @@ fn print_csv(user_datas: &Vec<UserData>)
 {
     let mut writer = std::io::stdout();
 
+    writer.write(format!("User, Total Contribution, {}\n", user_datas.iter()
+            .map(|user_data| user_data.user.clone())
+            .collect::<Vec<String>>()
+            .join(", ")
+        ).as_bytes()
+    ).unwrap();
+
     for user_data in user_datas.iter()
     {
         writer.write(format!("{},{},{}\n",
                              user_data.user,
                              fixed_point_to_price(user_data.total as i32),
-                             fixed_point_to_price(user_data.balance))
+                             user_data.balances.iter()
+                                .map(|&balance| fixed_point_to_price(balance))
+                                .collect::<Vec<String>>()
+                                .join(","))
                      .as_bytes())
             .unwrap();
 
@@ -159,32 +179,64 @@ fn print_csv(user_datas: &Vec<UserData>)
 fn compute_balances(db: &mut Connection) -> Vec<UserData>
 {
     // user, total, balance
-    let mut user_data: Vec<UserData> = std::vec![];
-    let mut sum: u32 = 0;
+    let mut stmt = db.prepare("SELECT COUNT(DISTINCT user) FROM account")
+        .unwrap();
+    let mut rows = stmt.query([]).unwrap();
 
-    let mut cursor = db.prepare("SELECT user, SUM(cost) FROM account GROUP BY user")
-        .unwrap()
-        .into_cursor();
-    while let Some(Ok(row)) = cursor.next()
+    let mut num_users: u32 = 0;
+    while let Some(row) = rows.next().unwrap()
     {
-        let user_total = row.get::<i64, _>(1) as u32;
-        user_data.push(UserData
+        num_users = row.get::<_, i64>(0).unwrap() as u32;
+    }
+
+    if num_users == 0
+    {
+        return vec![];
+    }
+
+    let mut stmt = db.prepare("SELECT user, SUM(cost) FROM account GROUP BY user")
+        .unwrap();
+    let mut rows = stmt.query([]).unwrap();
+
+    let mut user_datas: Vec<UserData> = std::vec![];
+    let mut total_contributions = 0;
+    while let Some(row) = rows.next().unwrap()
+    {
+        let user_total = row.get::<_, i64>(1).unwrap() as u32;
+        user_datas.push(UserData
             {
-                user: row.get::<String, _>(0),
+                user: row.get::<_, String>(0).unwrap(),
                 total: user_total,
-                balance: 0,
+                avg_contribution: user_total / num_users,
+                balances: vec![],
             }
         );
-        sum += user_total;
+        total_contributions += user_total as i32;
     }
 
-    let avg = sum / user_data.len() as u32;
-    for ud in user_data.iter_mut()
+    let mut new_total_contributions = 0;
+    for user_idx in 0..num_users as usize
     {
-        ud.balance = ud.total as i32 - avg as i32;
+        let user_total = user_datas[user_idx].total;
+        let user_avg_contribution = user_datas[user_idx].avg_contribution;
+        user_datas[user_idx].balances = user_datas.iter()
+            .map(|debtor| {
+                let user_contribution = debtor.avg_contribution as i32 - user_avg_contribution as i32;
+                new_total_contributions += user_contribution;
+                user_contribution
+            })
+            .collect::<Vec<i32>>();
+        new_total_contributions += user_total as i32;
     }
 
-    user_data
+    // correct for rounding error
+    if new_total_contributions != total_contributions
+    {
+        let diff = new_total_contributions - total_contributions;
+        user_datas[num_users as usize - 1].balances[num_users as usize - 1] += diff;
+    }
+
+    user_datas
 }
 
 fn main()
@@ -196,7 +248,12 @@ fn main()
         std::process::exit(0)
     }
 
-    let mut db = open(args.database).unwrap();
+    let db_filename = args.database.clone().into_os_string();
+    let mut db = match Connection::open(args.database)
+    {
+        Ok(c) => c,
+        Err(e) => panic!("Could not open database `{:?}`: {}", db_filename, e)
+    };
     add_items(&mut db, &items, &args.user);
 
     if let Some(path) = args.markdown

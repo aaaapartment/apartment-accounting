@@ -3,6 +3,8 @@ on:
   pull_request:
     types:
       - opened
+      - edited
+      - reopened
     paths:
       - "requests/*.csv"
 
@@ -25,15 +27,20 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v29.0.1
+        with:
+          separator: '\n'
 
       - name: Verify
         run: |
           chmod +x ./accounter-exe/accounter
-          CHANGED=${{ steps.changed-files.outputs.all_changed_files }}
-          NUM_CHANGED=$(wc -w <<< "$CHANGED")
+
+          CHANGED=$(printf %b '${{ steps.changed-files.outputs.all_changed_files }}')
+          NUM_CHANGED=$(echo "$CHANGED" | wc -l)
           if [ $NUM_CHANGED -ne 1 ]; then
             echo "::error Too many files - only submit one file"
             exit 1
           fi
-          ./accounter-exe/accounter --database ./account.sqlite --filename $CHANGED --user ${{ github.event.pull_request.user.login }} --validate
+          CHANGED_ARGS=$(echo "$CHANGED" | xargs -d '\n')
+
+          ./accounter-exe/accounter --database ./account.sqlite --filename "$CHANGED_ARGS" --user ${{ github.event.pull_request.user.login }} --validate
 
