@@ -38,7 +38,7 @@ jobs:
       - name: Update database
         run: |
           chmod +x ./accounter-exe/accounter
-          git checkout -b '${{ github.ref_name }}'
+          git checkout '${{ github.ref_name }}'
           git config --global user.email "aorals2@illinois.edu"
           git config --global user.name "Andrew Orals"
 
