@@ -2,7 +2,7 @@ name: Verify PR
 on:
   pull_request:
     paths:
-      - "requests/*.csv"
+      - "requests/*"
 
 jobs:
   verify:
