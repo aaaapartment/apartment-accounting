@@ -13,3 +13,4 @@
 |45|2022-09-08 19:27:41|Allen Steinberg|Toilet paper (2*4 rolls)|2.38|
 |46|2022-09-08 19:27:41|Allen Steinberg|Breaded frozen chicken|9.89|
 |47|2022-09-20 02:13:49|Andrew Orals|asdf|2.00|
+|48|2022-09-23 08:18:50|Andrew Orals|sadf|2.00|
