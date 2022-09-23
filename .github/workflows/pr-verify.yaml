@@ -1,12 +1,8 @@
 name: Verify PR
 on:
   pull_request:
-    types:
-      - opened
-      - edited
-      - reopened
     paths:
-      - "requests/*.csv"
+      - "requests/*"
 
 jobs:
   verify:
