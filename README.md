@@ -15,3 +15,4 @@
 |47|2022-09-20 02:13:49|Andrew Orals|asdf|2.00|
 |48|2022-09-23 08:18:50|Andrew Orals|sadf|2.00|
 |49|2022-09-23 08:24:34|Andrew Orals|Mandarin oranges|4.99|
+|50|2022-09-23 08:32:12|AllenSteinberg2|Mandarin oranges|4.99|
