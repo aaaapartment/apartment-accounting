@@ -16,3 +16,5 @@
 |48|2022-09-23 08:18:50|Andrew Orals|sadf|2.00|
 |49|2022-09-23 08:24:34|Andrew Orals|Mandarin oranges|4.99|
 |50|2022-09-23 08:32:12|AllenSteinberg2|Mandarin oranges|4.99|
+|51|2022-09-23 09:01:59|AllenSteinberg2|Chicken tenders|10.39|
+|52|2022-09-23 09:01:59|AllenSteinberg2|Napkins|3.29|
